@@ -75,5 +75,5 @@ type DeleteAllFiles struct {
 // Delete
 func (strategy *DeleteAllFiles) Execute(fileManager *FileManager) (bool, error) {
 	fmt.Println("Execute DeleteAllFiles")
-	return fileManager.DeleteFilesByPattern(strategy.FilePath, "*")
+	return fileManager.DeleteFilesByPattern(strategy.FilePath, ".*")
 }
