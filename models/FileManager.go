@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -12,7 +11,7 @@ import (
 type FileManager struct {
 }
 
-func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName string) (bool, error) {
+func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName string) error {
 
 	filePath := filepath.Join(folderPath, fileName)
 
@@ -20,66 +19,66 @@ func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName st
 
 	if err == nil {
 		fmt.Printf("File %s exists in folder %s.\n", fileName, folderPath)
-		return true, nil
+		return nil
 	}
 
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(folderPath, os.ModePerm)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		return false, err
+		return err
 	}
 	defer file.Close()
 	fmt.Printf("File %s has been created successfully.\n", fileName)
-	return true, nil
+	return nil
 }
 
-func (fileManager FileManager) CreateFolder(folderPath string) (bool, error) {
+func (fileManager FileManager) CreateFolder(folderPath string) error {
 	if err := os.MkdirAll(folderPath, 0755); err != nil {
 		fmt.Printf("Error creating nested directories %s: %s\n", folderPath, err)
-		return false, err
+		return err
 	} else {
 		fmt.Printf("Directory %s created successfully\n", folderPath)
-		return true, nil
+		return nil
 	}
 }
 
-func (fileManager FileManager) DeleteFile(folderPath, fileName string) (bool, error) {
+func (fileManager FileManager) DeleteFile(folderPath, fileName string) error {
 
 	filePath := filepath.Join(folderPath, fileName)
 
 	err := os.Remove(filePath)
 	if err != nil {
 		fmt.Printf("Error deleting file %s: %s\n", fileName, err)
-		return false, err
+		return err
 	} else {
 		fmt.Printf("File %s deleted successfully.\n", fileName)
-		return true, nil
+		return nil
 	}
 }
 
-func (fileManager FileManager) DeleteFileAndFolder(folderPath, fileName string) (bool, error) {
+func (fileManager FileManager) DeleteFileAndFolder(folderPath, fileName string) error {
 
-	_, err := fileManager.DeleteFile(folderPath, fileName)
+	err := fileManager.DeleteFile(folderPath, fileName)
 
 	err = os.Remove(folderPath)
 	if err != nil {
 		fmt.Println(err.Error())
-		return false, err
+		return err
 	}
 	fmt.Printf("Folder %s deleted successfully.\n", folderPath)
-	return true, nil
+	return nil
 }
 
 func (fileManager FileManager) CreateFilesList(folderPath string, fileNames []string) bool {
 	allFilesCreated := true
 	for _, fileName := range fileNames {
-		_, err := fileManager.CreateFileInFolder(folderPath, fileName)
+		err := fileManager.CreateFileInFolder(folderPath, fileName)
 		if err != nil {
 			allFilesCreated = false
 		}
@@ -90,7 +89,7 @@ func (fileManager FileManager) CreateFilesList(folderPath string, fileNames []st
 func (fileManager FileManager) DeleteFilesList(folderPath string, fileNames []string) bool {
 	allFilesDeleted := true
 	for _, fileName := range fileNames {
-		_, err := fileManager.DeleteFile(folderPath, fileName)
+		err := fileManager.DeleteFile(folderPath, fileName)
 		if err != nil {
 			allFilesDeleted = false
 		}
@@ -99,7 +98,7 @@ func (fileManager FileManager) DeleteFilesList(folderPath string, fileNames []st
 }
 
 func (fileManager FileManager) DeleteFilesBySubstring(basePath string, substring string) error {
-	files, err := ioutil.ReadDir(basePath)
+	files, err := os.ReadDir(basePath)
 	if err != nil {
 		return err
 	}
@@ -115,10 +114,10 @@ func (fileManager FileManager) DeleteFilesBySubstring(basePath string, substring
 	return nil
 }
 
-func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstring string, newSubstring string) (bool, error) {
-	files, err := ioutil.ReadDir(basePath)
+func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstring string, newSubstring string) error {
+	files, err := os.ReadDir(basePath)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, f := range files {
@@ -131,41 +130,41 @@ func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstr
 
 			err := os.Rename(oldPath, newPath)
 			if err != nil {
-				return false, err
+				return err
 			}
 		}
 	}
-	return true, nil
+	return nil
 }
 
-func (fileManager FileManager) DeleteFilesByPattern(basePath string, regex string) (bool, error) {
+func (fileManager FileManager) DeleteFilesByPattern(basePath string, regex string) error {
 	compiledRegex, err := regexp.Compile(regex)
 	if err != nil {
-		fmt.Errorf("invalid pattern: %w", err)
-		return false, err
+		fmt.Println("invalid pattern: ", err)
+		return err
 	}
 
-	files, err := ioutil.ReadDir(basePath)
+	files, err := os.ReadDir(basePath)
 
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, file := range files {
 		if compiledRegex.MatchString(file.Name()) {
 			err := os.RemoveAll(filepath.Join(basePath, file.Name()))
 			if err != nil {
-				return false, err
+				return err
 			}
 		}
 	}
-	return true, nil
+	return nil
 }
 
-func (fileManager FileManager) AddPrefixToFiles(basePath, prefix string) (bool, error) {
-	files, err := ioutil.ReadDir(basePath)
+func (fileManager FileManager) AddPrefixToFiles(basePath, prefix string) error {
+	files, err := os.ReadDir(basePath)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, file := range files {
@@ -173,14 +172,14 @@ func (fileManager FileManager) AddPrefixToFiles(basePath, prefix string) (bool, 
 		newPath := filepath.Join(basePath, prefix+file.Name())
 		err := os.Rename(oldPath, newPath)
 		if err != nil {
-			return false, err
+			return err
 		}
 	}
-	return true, nil
+	return nil
 }
 
 func (fileManager FileManager) CopyFilesToNewDir(srcPath, destPath string) error {
-	files, err := ioutil.ReadDir(srcPath)
+	files, err := os.ReadDir(srcPath)
 	if err != nil {
 		return err
 	}
@@ -192,7 +191,7 @@ func (fileManager FileManager) CopyFilesToNewDir(srcPath, destPath string) error
 	for _, f := range files {
 		srcFile := filepath.Join(srcPath, f.Name())
 		destFile := filepath.Join(destPath, f.Name())
-		_, err := fileManager.CopyFileContent(srcFile, destFile)
+		err := fileManager.CopyFileContent(srcFile, destFile)
 		if err != nil {
 			return err
 		}
@@ -200,18 +199,18 @@ func (fileManager FileManager) CopyFilesToNewDir(srcPath, destPath string) error
 	return nil
 }
 
-func (fileManager FileManager) CopyFileContent(sourceFile string, destinationFile string) (bool, error) {
-	input, err := ioutil.ReadFile(sourceFile)
+func (fileManager FileManager) CopyFileContent(sourceFile string, destinationFile string) error {
+	input, err := os.ReadFile(sourceFile)
 	if err != nil {
 		fmt.Println(err)
-		return false, err
+		return err
 	}
 
-	err = ioutil.WriteFile(destinationFile, input, 0755)
+	err = os.WriteFile(destinationFile, input, 0755)
 	if err != nil {
 		fmt.Println("Error creating", destinationFile)
 		fmt.Println(err)
-		return false, err
+		return err
 	}
-	return true, nil
+	return nil
 }

@@ -5,17 +5,8 @@ import (
 	"strconv"
 )
 
-type OperationType int
-
-const (
-	Create OperationType = iota
-	Delete
-	Move
-	Rename
-)
-
 type FileOperationStrategy interface {
-	Execute(fileManager *FileManager) (bool, error)
+	Execute(fileManager *FileManager) error
 }
 
 type AddUnderScoreToFilesStrategy struct {
@@ -23,7 +14,7 @@ type AddUnderScoreToFilesStrategy struct {
 }
 
 // Rename
-func (strategy *AddUnderScoreToFilesStrategy) Execute(fileManager *FileManager) (bool, error) {
+func (strategy *AddUnderScoreToFilesStrategy) Execute(fileManager *FileManager) error {
 	fmt.Println("Execute AddUnderScoreToFilesStrategy")
 	return fileManager.AddPrefixToFiles(strategy.FilePath, "_")
 }
@@ -33,7 +24,7 @@ type DeleteFilesWithNumbersInNameStrategy struct {
 }
 
 // Delete
-func (strategy *DeleteFilesWithNumbersInNameStrategy) Execute(fileManager *FileManager) (bool, error) {
+func (strategy *DeleteFilesWithNumbersInNameStrategy) Execute(fileManager *FileManager) error {
 	fmt.Println("Execute DeleteFilesWithNumbersInNameStrategy")
 	return fileManager.DeleteFilesByPattern(strategy.FilePath, "[0-9]+")
 }
@@ -46,14 +37,14 @@ type CreateFilesByCounter struct {
 }
 
 // Create
-func (strategy *CreateFilesByCounter) Execute(fileManager *FileManager) (bool, error) {
+func (strategy *CreateFilesByCounter) Execute(fileManager *FileManager) error {
 	for i := strategy.CounterStart; i <= strategy.CounterEnd; i++ {
-		_, err := fileManager.CreateFileInFolder(strategy.FilePath, strategy.FileName+strconv.Itoa(i))
+		err := fileManager.CreateFileInFolder(strategy.FilePath, strategy.FileName+strconv.Itoa(i))
 		if err != nil {
-			return false, fmt.Errorf("error creating file %s%d: %w", strategy.FileName, i, err)
+			return fmt.Errorf("error creating file %s%d: %w", strategy.FileName, i, err)
 		}
 	}
-	return true, nil
+	return nil
 }
 
 type RenameFilesWithSubstring struct {
@@ -63,7 +54,7 @@ type RenameFilesWithSubstring struct {
 }
 
 // Move
-func (strategy *RenameFilesWithSubstring) Execute(fileManager *FileManager) (bool, error) {
+func (strategy *RenameFilesWithSubstring) Execute(fileManager *FileManager) error {
 	fmt.Println("Execute RenameFilesWithSubstring")
 	return fileManager.RenameFilesBySubstring(strategy.FilePath, strategy.OldSubstring, strategy.NewSubstring)
 }
@@ -73,7 +64,7 @@ type DeleteAllFiles struct {
 }
 
 // Delete
-func (strategy *DeleteAllFiles) Execute(fileManager *FileManager) (bool, error) {
+func (strategy *DeleteAllFiles) Execute(fileManager *FileManager) error {
 	fmt.Println("Execute DeleteAllFiles")
 	return fileManager.DeleteFilesByPattern(strategy.FilePath, ".*")
 }
