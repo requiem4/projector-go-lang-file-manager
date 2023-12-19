@@ -4,7 +4,7 @@ import "log"
 
 type FileOrganizer struct {
 	Strategy FileOperationStrategy
-	logger   *log.Logger
+	Logger   *log.Logger
 }
 
 func (fileOrganizer *FileOrganizer) SetStrategy(strategy FileOperationStrategy) {
@@ -12,6 +12,6 @@ func (fileOrganizer *FileOrganizer) SetStrategy(strategy FileOperationStrategy) 
 }
 
 func (fileOrganizer *FileOrganizer) ExecuteStrategy() error {
-	var fileManager *FileManager = NewFileManager(fileOrganizer.logger)
+	var fileManager *FileManager = NewFileManager(fileOrganizer.Logger)
 	return fileOrganizer.Strategy.Execute(fileManager)
 }
