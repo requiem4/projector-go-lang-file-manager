@@ -1,14 +1,17 @@
 package models
 
+import "log"
+
 type FileOrganizer struct {
 	Strategy FileOperationStrategy
+	logger   *log.Logger
 }
 
-func (fo *FileOrganizer) SetStrategy(strategy FileOperationStrategy) {
-	fo.Strategy = strategy
+func (fileOrganizer *FileOrganizer) SetStrategy(strategy FileOperationStrategy) {
+	fileOrganizer.Strategy = strategy
 }
 
-func (fo *FileOrganizer) ExecuteStrategy() error {
-	var fileManager *FileManager = &FileManager{}
-	return fo.Strategy.Execute(fileManager)
+func (fileOrganizer *FileOrganizer) ExecuteStrategy() error {
+	var fileManager *FileManager = NewFileManager(fileOrganizer.logger)
+	return fileOrganizer.Strategy.Execute(fileManager)
 }

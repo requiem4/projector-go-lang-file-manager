@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"strconv"
 )
 
@@ -15,7 +14,9 @@ type AddUnderScoreToFilesStrategy struct {
 
 // Rename
 func (strategy *AddUnderScoreToFilesStrategy) Execute(fileManager *FileManager) error {
-	fmt.Println("Execute AddUnderScoreToFilesStrategy")
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Execute AddUnderScoreToFilesStrategy")
+	}
 	return fileManager.AddPrefixToFiles(strategy.FilePath, "_")
 }
 
@@ -25,7 +26,9 @@ type DeleteFilesWithNumbersInNameStrategy struct {
 
 // Delete
 func (strategy *DeleteFilesWithNumbersInNameStrategy) Execute(fileManager *FileManager) error {
-	fmt.Println("Execute DeleteFilesWithNumbersInNameStrategy")
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Execute DeleteFilesWithNumbersInNameStrategy")
+	}
 	return fileManager.DeleteFilesByPattern(strategy.FilePath, "[0-9]+")
 }
 
@@ -38,11 +41,20 @@ type CreateFilesByCounter struct {
 
 // Create
 func (strategy *CreateFilesByCounter) Execute(fileManager *FileManager) error {
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Execute CreateFilesByCounter")
+	}
 	for i := strategy.CounterStart; i <= strategy.CounterEnd; i++ {
 		err := fileManager.CreateFileInFolder(strategy.FilePath, strategy.FileName+strconv.Itoa(i))
 		if err != nil {
-			return fmt.Errorf("error creating file %s%d: %w", strategy.FileName, i, err)
+			if fileManager.logger != nil {
+				fileManager.logger.Printf("error creating file %s%d: %w", strategy.FileName, i, err)
+			}
+			return err
 		}
+	}
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("CreateFilesByCounter success")
 	}
 	return nil
 }
@@ -55,7 +67,9 @@ type RenameFilesWithSubstring struct {
 
 // Move
 func (strategy *RenameFilesWithSubstring) Execute(fileManager *FileManager) error {
-	fmt.Println("Execute RenameFilesWithSubstring")
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Execute RenameFilesWithSubstring")
+	}
 	return fileManager.RenameFilesBySubstring(strategy.FilePath, strategy.OldSubstring, strategy.NewSubstring)
 }
 
@@ -65,6 +79,8 @@ type DeleteAllFiles struct {
 
 // Delete
 func (strategy *DeleteAllFiles) Execute(fileManager *FileManager) error {
-	fmt.Println("Execute DeleteAllFiles")
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Execute DeleteAllFiles")
+	}
 	return fileManager.DeleteFilesByPattern(strategy.FilePath, ".*")
 }

@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -9,6 +10,11 @@ import (
 )
 
 type FileManager struct {
+	logger *log.Logger
+}
+
+func NewFileManager(logger *log.Logger) *FileManager {
+	return &FileManager{logger: logger}
 }
 
 func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName string) error {
@@ -18,7 +24,10 @@ func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName st
 	_, err := os.Stat(filePath)
 
 	if err == nil {
-		fmt.Printf("File %s exists in folder %s.\n", fileName, folderPath)
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("File %s exists in folder %s.\n", fileName, folderPath)
+		}
+
 		return nil
 	}
 
@@ -34,16 +43,24 @@ func (fileManager FileManager) CreateFileInFolder(folderPath string, fileName st
 		return err
 	}
 	defer file.Close()
-	fmt.Printf("File %s has been created successfully.\n", fileName)
+
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("File %s has been created successfully.\n", fileName)
+	}
+
 	return nil
 }
 
 func (fileManager FileManager) CreateFolder(folderPath string) error {
 	if err := os.MkdirAll(folderPath, 0755); err != nil {
-		fmt.Printf("Error creating nested directories %s: %s\n", folderPath, err)
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("Error creating nested directories %s: %s\n", folderPath, err)
+		}
 		return err
 	} else {
-		fmt.Printf("Directory %s created successfully\n", folderPath)
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("Directory %s created successfully\n", folderPath)
+		}
 		return nil
 	}
 }
@@ -54,10 +71,14 @@ func (fileManager FileManager) DeleteFile(folderPath, fileName string) error {
 
 	err := os.Remove(filePath)
 	if err != nil {
-		fmt.Printf("Error deleting file %s: %s\n", fileName, err)
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("Error deleting file %s: %s\n", fileName, err)
+		}
 		return err
 	} else {
-		fmt.Printf("File %s deleted successfully.\n", fileName)
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("File %s deleted successfully.\n", fileName)
+		}
 		return nil
 	}
 }
@@ -71,45 +92,82 @@ func (fileManager FileManager) DeleteFileAndFolder(folderPath, fileName string) 
 		fmt.Println(err.Error())
 		return err
 	}
-	fmt.Printf("Folder %s deleted successfully.\n", folderPath)
+	if fileManager.logger != nil {
+		fileManager.logger.Printf("Folder %s deleted successfully.\n", folderPath)
+	}
 	return nil
 }
 
-func (fileManager FileManager) CreateFilesList(folderPath string, fileNames []string) bool {
-	allFilesCreated := true
+func (fileManager FileManager) CreateFilesList(folderPath string, fileNames []string) error {
+	var successfullyCreated []string
+
 	for _, fileName := range fileNames {
 		err := fileManager.CreateFileInFolder(folderPath, fileName)
 		if err != nil {
-			allFilesCreated = false
+			if fileManager.logger != nil {
+				fileManager.logger.Printf("Error creating file %s: %s\n", fileName, err)
+			}
+			return err
+		} else {
+			successfullyCreated = append(successfullyCreated, fileName)
 		}
 	}
-	return allFilesCreated
+
+	if fileManager.logger != nil && len(successfullyCreated) > 0 {
+		fileManager.logger.Printf("Files %v created successfully.\n", successfullyCreated)
+	}
+	return nil
 }
 
-func (fileManager FileManager) DeleteFilesList(folderPath string, fileNames []string) bool {
-	allFilesDeleted := true
+func (fileManager FileManager) DeleteFilesList(folderPath string, fileNames []string) error {
+	var successfullyDeleted []string
+
 	for _, fileName := range fileNames {
 		err := fileManager.DeleteFile(folderPath, fileName)
 		if err != nil {
-			allFilesDeleted = false
+			if fileManager.logger != nil {
+				fileManager.logger.Printf("Error deleting file %s: %s\n", fileName, err)
+			}
+			return err
+		} else {
+			successfullyDeleted = append(successfullyDeleted, fileName)
 		}
 	}
-	return allFilesDeleted
+
+	if fileManager.logger != nil && len(successfullyDeleted) > 0 {
+		fileManager.logger.Printf("Files %v deleted successfully.\n", successfullyDeleted)
+	}
+	return nil
 }
 
 func (fileManager FileManager) DeleteFilesBySubstring(basePath string, substring string) error {
+	var successfullyDeleted []string
+
 	files, err := os.ReadDir(basePath)
 	if err != nil {
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("Error reading directory %s: %s\n", basePath, err)
+		}
 		return err
 	}
 
 	for _, f := range files {
 		if strings.Contains(f.Name(), substring) {
-			err := os.RemoveAll(filepath.Join(basePath, f.Name()))
+			fullPath := filepath.Join(basePath, f.Name())
+			err := os.RemoveAll(fullPath)
 			if err != nil {
+				if fileManager.logger != nil {
+					fileManager.logger.Printf("Error deleting file %s: %s\n", fullPath, err)
+				}
 				return err
+			} else {
+				successfullyDeleted = append(successfullyDeleted, fullPath)
 			}
 		}
+	}
+
+	if fileManager.logger != nil && len(successfullyDeleted) > 0 {
+		fileManager.logger.Printf("Files %v deleted successfully.\n", successfullyDeleted)
 	}
 	return nil
 }
@@ -140,7 +198,6 @@ func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstr
 func (fileManager FileManager) DeleteFilesByPattern(basePath string, regex string) error {
 	compiledRegex, err := regexp.Compile(regex)
 	if err != nil {
-		fmt.Println("invalid pattern: ", err)
 		return err
 	}
 
@@ -208,8 +265,6 @@ func (fileManager FileManager) CopyFileContent(sourceFile string, destinationFil
 
 	err = os.WriteFile(destinationFile, input, 0755)
 	if err != nil {
-		fmt.Println("Error creating", destinationFile)
-		fmt.Println(err)
 		return err
 	}
 	return nil
