@@ -7,6 +7,10 @@ type FileOrganizer struct {
 	Logger   *log.Logger
 }
 
+func (fileOrganizer *FileOrganizer) SetLogger(logger *log.Logger) {
+	fileOrganizer.Logger = logger
+}
+
 func (fileOrganizer *FileOrganizer) SetStrategy(strategy FileOperationStrategy) {
 	fileOrganizer.Strategy = strategy
 }
