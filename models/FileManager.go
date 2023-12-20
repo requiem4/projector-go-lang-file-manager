@@ -178,9 +178,9 @@ func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstr
 		return err
 	}
 
-	for _, f := range files {
-		if strings.Contains(f.Name(), oldSubstring) {
-			fileName := f.Name()
+	for _, file := range files {
+		if strings.Contains(file.Name(), oldSubstring) {
+			fileName := file.Name()
 			oldPath := filepath.Join(basePath, fileName)
 			newName := strings.ReplaceAll(fileName, oldSubstring, newSubstring)
 
@@ -189,6 +189,10 @@ func (fileManager FileManager) RenameFilesBySubstring(basePath string, oldSubstr
 			err := os.Rename(oldPath, newPath)
 			if err != nil {
 				return err
+			}
+
+			if fileManager.logger != nil {
+				fileManager.logger.Printf("Files %v successfully renamed to %v", fileName, newName)
 			}
 		}
 	}
@@ -213,6 +217,9 @@ func (fileManager FileManager) DeleteFilesByPattern(basePath string, regex strin
 			if err != nil {
 				return err
 			}
+			if fileManager.logger != nil {
+				fileManager.logger.Printf("Files %v successfully deleted by pattern %v", file.Name(), regex)
+			}
 		}
 	}
 	return nil
@@ -230,6 +237,9 @@ func (fileManager FileManager) AddPrefixToFiles(basePath, prefix string) error {
 		err := os.Rename(oldPath, newPath)
 		if err != nil {
 			return err
+		}
+		if fileManager.logger != nil {
+			fileManager.logger.Printf("Files %v successfully renamed to %v.\n", oldPath, newPath)
 		}
 	}
 	return nil
